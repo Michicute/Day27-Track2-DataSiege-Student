@@ -16,7 +16,13 @@ import scoring
 import signing
 from isolation import IsolatedRun
 
-BUDGET = 220.0
+# Private is scoped tighter on fault difficulty than practice/public, so its
+# budget is set separately: full single-pass coverage (one metered call per
+# event) costs ~300 credits on private's 200-event stream — 220 would tax
+# that at ~0.36 overage regardless of skill, compressing the gap between a
+# real detector and doing nothing. 320 gives genuine full coverage a little
+# headroom while still penalizing wasteful/redundant calls.
+BUDGET_BY_PHASE = {"practice": 220.0, "public": 220.0, "private": 320.0}
 
 
 def main():
@@ -42,6 +48,7 @@ def main():
     labels = schedule["labels"]
     gt_by_key = {(t["type"], t["batch_id_or_ref"]): t["gt"] for t in truths}
 
+    BUDGET = BUDGET_BY_PHASE[args.phase]
     run = IsolatedRun(args.defense, str(baseline_path), gt_by_key, budget=BUDGET)
 
     verdicts = []
